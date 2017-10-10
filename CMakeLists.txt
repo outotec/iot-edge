@@ -4,7 +4,7 @@
 cmake_minimum_required(VERSION 2.8.12)
 project(azure_iot_gateway_sdk)
 
-set(GATEWAY_VERSION 1.0.6 CACHE INTERNAL "")
+set(GATEWAY_VERSION 1.0.7 CACHE INTERNAL "")
 set(COMPANY_NAME "Microsoft")
 SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
@@ -266,10 +266,10 @@ endfunction(copy_module_host_dll)
 
 function(copy_iothub_client_dll whatIsBuilding whatIsBuildingLocation)
   if(WIN32)
-    if(EXISTS "${azure_iot_sdks_DIR}/../bin/iothub_client.dll")
+    if(EXISTS "${azure_iot_sdks_DIR}/../bin/iothub_client_dll.dll")
       add_custom_command(TARGET ${whatIsBuilding} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${azure_iot_sdks_DIR}/../bin/iothub_client.dll"
+        "${azure_iot_sdks_DIR}/../bin/iothub_client_dll.dll"
         ${whatIsBuildingLocation})
     endif()
   endif()
