@@ -43,6 +43,8 @@ typedef struct IOTHUB_HANDLE_DATA_TAG
     TRANSPORT_HANDLE transportHandle;
     BROKER_HANDLE broker;
     IOTHUB_CLIENT_RETRY_POLICY retryPolicy;
+    STRING_HANDLE messageContentType;
+    STRING_HANDLE messageEncoding;
 }IOTHUB_HANDLE_DATA;
 
 /*
@@ -69,6 +71,8 @@ typedef struct IOTHUB_HANDLE_DATA_TAG
 #define HUBNAME "IoTHubName"
 #define TRANSPORT "Transport"
 #define RETRY_POLICY "RetryPolicy"
+#define MESSAGE_CONTENT_TYPE "messageContentType"
+#define MESSAGE_ENCODING "messageEncoding"
 
 static int strcmp_i(const char* lhs, const char* rhs)
 {
@@ -118,6 +122,12 @@ static void* IotHub_ParseConfigurationFromJson(const char* configuration)
                 const char * IoTHubName;
                 const char * IoTHubSuffix;
                 const char * transport;
+                const char * messageContentType;
+                const char * messageEncoding;
+
+                // messageContentType and messageEncoding are optionial fields
+                messageContentType = json_object_get_string(obj, MESSAGE_CONTENT_TYPE);
+                messageEncoding = json_object_get_string(obj, MESSAGE_ENCODING);
 
                 if ((IoTHubName = json_object_get_string(obj, HUBNAME)) == NULL)
                 {
@@ -141,6 +151,8 @@ static void* IotHub_ParseConfigurationFromJson(const char* configuration)
                 {
                     char* name;
                     char* suffix;
+                    char* contentType = NULL;
+                    char* encoding = NULL;
                     IOTHUB_CONFIG* config;
                     if ((name = malloc(strlen(IoTHubName) + 1)) == NULL)
                     {
@@ -153,11 +165,25 @@ static void* IotHub_ParseConfigurationFromJson(const char* configuration)
                         free(name);
                         result = NULL;
                     }
+                    else if (messageContentType != NULL && (contentType = malloc(strlen(messageContentType) + 1)) == NULL)
+                    {
+                        LogError("Could not allocate memory for messageContentType");
+                        free(name);
+                        result = NULL;
+                    }
+                    else if (messageEncoding != NULL && (encoding = malloc(strlen(messageEncoding) + 1)) == NULL)
+                    {
+                        LogError("Could not allocate memory for messageEncoding");
+                        free(name);
+                        result = NULL;
+                    }
                     else if ((config = malloc(sizeof(IOTHUB_CONFIG))) == NULL)
                     {
                         LogError("Could not allocate memory for configuration");
                         free(name);
                         free(suffix);
+                        free(contentType);
+                        free(encoding);
                         result = NULL;
                     }
                     else
@@ -179,6 +205,8 @@ static void* IotHub_ParseConfigurationFromJson(const char* configuration)
                         {
                             free(name);
                             free(suffix);
+                            free(contentType);
+                            free(encoding);
                             free(config);
                             config = NULL;
                         }
@@ -226,6 +254,8 @@ static void* IotHub_ParseConfigurationFromJson(const char* configuration)
                                 LogError("Invalid RetryPolicy");
                                 free(name);
                                 free(suffix);
+                                free(contentType);
+                                free(encoding);
                                 free(config);
                                 config = NULL;
                             }
@@ -237,6 +267,8 @@ static void* IotHub_ParseConfigurationFromJson(const char* configuration)
                             strcpy(suffix, IoTHubSuffix);
                             config->IoTHubName = name;
                             config->IoTHubSuffix = suffix;
+                            config->messageContentType = contentType;
+                            config->messageEncoding = encoding;
                         }
 
                         result = config;
@@ -943,6 +975,22 @@ static void IotHub_Receive(MODULE_HANDLE moduleHandle, MESSAGE_HANDLE messageHan
 
                                     eventConfirmationCallback = SendEventAsync_receiveMessageConfirmation;
                                     userContextCallback->moduleData = moduleHandleData;
+                                }
+
+                                if (IOTHUB_MESSAGE_OK != IoTHubMessage_SetContentTypeSystemProperty(iotHubMessage, "application%2Fjson"))
+                                {
+                                    LogError("Failed to set content type");
+                                    IoTHubMessage_Destroy(iotHubMessage);
+                                    ConstMap_Destroy(properties);
+                                    return;
+                                }
+
+                                if (IOTHUB_MESSAGE_OK != IoTHubMessage_SetContentEncodingSystemProperty(iotHubMessage, "UTF-8"))
+                                {
+                                    LogError("Failed to set content encoding");
+                                    IoTHubMessage_Destroy(iotHubMessage);
+                                    ConstMap_Destroy(properties);
+                                    return;
                                 }
 
                                 /*Codes_SRS_IOTHUBMODULE_02_020: [ `IotHub_Receive` shall call IoTHubClient_SendEventAsync passing the IOTHUB_MESSAGE_HANDLE. ]*/
