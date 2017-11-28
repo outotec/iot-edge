@@ -16,6 +16,8 @@ typedef struct IOTHUB_CONFIG_TAG
 {
     const char* IoTHubName;
     const char* IoTHubSuffix;
+    const char* messageContentType;
+    const char* messageEncoding;
     IOTHUB_CLIENT_TRANSPORT_PROVIDER transportProvider;
     IOTHUB_CLIENT_RETRY_POLICY retryPolicy;
 }IOTHUB_CONFIG; /*this needs to be passed to the Module_Create function*/

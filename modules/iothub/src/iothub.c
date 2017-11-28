@@ -291,6 +291,8 @@ static void IotHub_FreeConfiguration(void* configuration)
         /*Codes_SRS_IOTHUBMODULE_05_015: [ `IotHub_FreeConfiguration` shall free the strings referenced by the `IoTHubName` and `IoTHubSuffix` data members, and then free the `IOTHUB_CONFIG` structure itself. ]*/
         free((void*)config->IoTHubName);
         free((void*)config->IoTHubSuffix);
+        free((void*)config->messageContentType);
+        free((void*)config->messageEncoding);
         free(config);
     }
 }
@@ -335,6 +337,9 @@ static MODULE_HANDLE IotHub_Create(BROKER_HANDLE broker, const void* configurati
         }
         else
         {
+            result->messageContentType = config->messageContentType;
+            result->messageEncoding = config->messageEncoding;
+
             /*Codes_SRS_IOTHUBMODULE_02_006: [ `IotHub_Create` shall create an empty `VECTOR` containing pointers to `PERSONALITY`s. ]*/
             result->personalities = VECTOR_create(sizeof(PERSONALITY_PTR));
             if (result->personalities == NULL)
@@ -977,7 +982,8 @@ static void IotHub_Receive(MODULE_HANDLE moduleHandle, MESSAGE_HANDLE messageHan
                                     userContextCallback->moduleData = moduleHandleData;
                                 }
 
-                                if (IOTHUB_MESSAGE_OK != IoTHubMessage_SetContentTypeSystemProperty(iotHubMessage, "application%2Fjson"))
+                                if (moduleHandleData->messageContentType != NULL &&
+                                    IOTHUB_MESSAGE_OK != IoTHubMessage_SetContentTypeSystemProperty(iotHubMessage, moduleHandleData->messageContentType))
                                 {
                                     LogError("Failed to set content type");
                                     IoTHubMessage_Destroy(iotHubMessage);
@@ -985,7 +991,8 @@ static void IotHub_Receive(MODULE_HANDLE moduleHandle, MESSAGE_HANDLE messageHan
                                     return;
                                 }
 
-                                if (IOTHUB_MESSAGE_OK != IoTHubMessage_SetContentEncodingSystemProperty(iotHubMessage, "UTF-8"))
+                                if (moduleHandleData->messageEncoding != NULL &&
+                                    IOTHUB_MESSAGE_OK != IoTHubMessage_SetContentEncodingSystemProperty(iotHubMessage, moduleHandleData->messageEncoding))
                                 {
                                     LogError("Failed to set content encoding");
                                     IoTHubMessage_Destroy(iotHubMessage);
