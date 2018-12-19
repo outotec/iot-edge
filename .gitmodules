@@ -21,7 +21,7 @@
 	url = https://github.com/azure/azure-c-testrunnerswitcher
 [submodule "deps/umqtt"]
 	path = v1/deps/umqtt
-	url = https://github.com/azure/azure-umqtt-c
+	url = https://github.com/villepalo/azure-umqtt-c
 [submodule "deps/iot-sdk-c"]
 	path = v1/deps/iot-sdk-c
 	url = https://github.com/villepalo/azure-iot-sdk-c.git
